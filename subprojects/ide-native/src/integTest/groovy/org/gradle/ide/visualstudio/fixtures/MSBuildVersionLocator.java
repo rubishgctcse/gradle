@@ -32,7 +32,21 @@ public class MSBuildVersionLocator {
     public File getMSBuildInstall(AvailableToolChains.InstalledToolChain toolChain) {
         if (toolChain instanceof AvailableToolChains.InstalledVisualCpp) {
             AvailableToolChains.InstalledVisualCpp visualCpp = (AvailableToolChains.InstalledVisualCpp) toolChain;
-            return new File("C:/Program Files (x86)/MSBuild/" + visualCpp.getVersion().getMajor() + ".0/Bin/amd64/MSBuild.exe");
+            File msBuildDir = new File("C:/Program Files (x86)/MSBuild");
+            String[] children = msBuildDir.list();
+            if (children == null) {
+                System.out.println("-> DOES NOT EXIST: " + msBuildDir);
+            } else {
+                System.out.println("-> CONTENTS:");
+                for (String child : children) {
+                    System.out.println("  - " + child);
+                }
+            }
+            File msBuildExe = new File(msBuildDir, visualCpp.getVersion().getMajor() + ".0/Bin/amd64/MSBuild.exe");
+            if (!msBuildExe.isFile()) {
+                throw new IllegalStateException(String.format("Could not find MSBuild for Visual Studio version %s. Expected in %s", visualCpp.getVersion(), msBuildExe));
+            }
+            return msBuildExe;
         }
 
         File vswhere = vswhereLocator.getVswhereInstall();
