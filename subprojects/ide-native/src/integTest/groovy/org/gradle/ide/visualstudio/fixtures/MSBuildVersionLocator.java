@@ -53,11 +53,26 @@ public class MSBuildVersionLocator {
         if (!vsWhereOutput.getError().trim().isEmpty()) {
             throw new IllegalStateException(String.format("Could not determine the location of MSBuild %s: %s", vsVersion.getMajor(), vsWhereOutput.getError()));
         }
+        String location = vsWhereOutput.getOut().trim();
+        TestFile msbuild;
+        if (!location.isEmpty()) {
+            TestFile installDir = new TestFile(location);
+            msbuild = installDir.file("MSBuild/" + vsVersion.getMajor() + ".0/Bin/MSBuild.exe");
+        } else {
+            TestFile installDir = new TestFile("C:/program files (x86)/MSBuild/" + vsVersion.getMajor() + ".0");
+            msbuild = installDir.file("Bin/MSBuild.exe");
 
-        TestFile installDir = new TestFile(vsWhereOutput.getOut().trim());
+            System.out.println("CONTENTS:");
+            String[] children = installDir.list();
+            if (children == null) {
+                System.out.println("NULL");
+            } else {
+                for (String child : children) {
+                    System.out.println("  - " + child);
+                }
+            }
+        }
 
-        // TODO: Remove the hardcoded version, see https://github.com/Microsoft/vswhere/issues/74
-        TestFile msbuild = installDir.file("MSBuild/" + vsVersion.getMajor() + ".0/Bin/MSBuild.exe");
         if (!msbuild.exists()) {
             throw new IllegalStateException(String.format("This test requires MSBuild %s to be installed. Expected it to be installed at %s.", vsVersion.getMajor(), msbuild));
         }
