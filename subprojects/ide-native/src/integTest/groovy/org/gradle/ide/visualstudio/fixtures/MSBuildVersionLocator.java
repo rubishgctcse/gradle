@@ -18,6 +18,7 @@ package org.gradle.ide.visualstudio.fixtures;
 
 import org.gradle.nativeplatform.fixtures.AvailableToolChains;
 import org.gradle.nativeplatform.toolchain.internal.msvcpp.version.VswhereVersionLocator;
+import org.gradle.test.fixtures.file.ExecOutput;
 import org.gradle.test.fixtures.file.TestFile;
 import org.gradle.util.VersionNumber;
 
@@ -44,7 +45,16 @@ public class MSBuildVersionLocator {
             throw new IllegalStateException("vswhere tool is required to be installed");
         }
 
-        TestFile installDir = new TestFile(new TestFile(vswhere).exec("-version", String.format("[%s.0,%s.0)", vsVersion.getMajor(), vsVersion.getMajor() + 1), "-products", "*", "-requires", "Microsoft.Component.MSBuild", "-property", "installationPath").getOut().trim());
+        ExecOutput vsWhereOutput = new TestFile(vswhere).exec("-version", String.format("[%s.0,%s.0)", vsVersion.getMajor(), vsVersion.getMajor() + 1), "-products", "*", "-requires", "Microsoft.Component.MSBuild", "-property", "installationPath");
+
+        System.out.println("OUTPUT: " + vsWhereOutput.getOut());
+        System.out.println("ERROR: " + vsWhereOutput.getError());
+
+        if (!vsWhereOutput.getError().trim().isEmpty()) {
+            throw new IllegalStateException(String.format("Could not determine the location of MSBuild %s: %s", vsVersion.getMajor(), vsWhereOutput.getError()));
+        }
+
+        TestFile installDir = new TestFile(vsWhereOutput.getOut().trim());
 
         // TODO: Remove the hardcoded version, see https://github.com/Microsoft/vswhere/issues/74
         TestFile msbuild = installDir.file("MSBuild/" + vsVersion.getMajor() + ".0/Bin/MSBuild.exe");
